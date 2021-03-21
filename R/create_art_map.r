@@ -6,51 +6,60 @@
 #' @examples create_art_map()
 
 create_art_map <- function() {
-
+  city <- "Praha"
+  country <- "Czechia"
+  dpi <- 200
+  
   # obtain coordinates for ggplot
-  bb_salamanca <- getbb("Salamanca, España")
+  bb <- getbb(paste(city, country, sep=", "))
 
-  print("Downloading Salamanca information")
   # obtain the dataset
-  streets <- bb_salamanca %>%
+  print("Downloading information")
+  streets <- bb %>%
     opq() %>%
     add_osm_feature(key = "highway", value = c("motorway", "primary", "secondary", "tertiary")) %>%
     osmdata_sf()
 
-  small_streets <- bb_salamanca %>%
+  small_streets <- bb %>%
     opq() %>%
     add_osm_feature(key = "highway", value = c("residential", "living_street", "unclassified", "service", "pedestrian", "footway", "track","path")) %>%
     osmdata_sf()
 
-  river <- bb_salamanca %>%
-    opq() %>%
-    add_osm_feature(key = "waterway", value = "river") %>%
+  water <- 
+    opq(bbox = bb) %>%
+    add_osm_feature(key = 'water', value = c("river")) %>%
+    osmdata_sf()
+  
+  waterway <- 
+    opq(bbox = bb) %>%
+    add_osm_feature(key = 'waterway', value = c("river", "riverbank")) %>%
     osmdata_sf()
 
-  print("Creating Salamanca map")
   # create map
+  print("Creating map")
   final_map <- ggplot() +
-          #ggtitle("SALAMANCA") +
-          geom_sf(data = streets$osm_lines, inherit.aes = FALSE, color = "black", size = .4, alpha = .8) +
-          geom_sf(data = small_streets$osm_lines, inherit.aes = FALSE, color = "black", size = .2, alpha = .8) +
-          geom_sf(data = river$osm_lines, inherit.aes = FALSE, color = "black", size = 1.3, alpha = .5) +
-          coord_sf(xlim = c(min(bb_salamanca[1,]), max(bb_salamanca[1,])), ylim = c(min(bb_salamanca[2,]), max(bb_salamanca[2,])), expand = FALSE) +
+          #ggtitle(city") +
+          geom_sf(data = water$osm_polygons, fill = "blue", colour = NA) +
+          geom_sf(data = waterway$osm_polygons, fill = "blue", colour = NA) +
+          geom_sf(data = streets$osm_lines, inherit.aes = FALSE, color = "white", size = .5, alpha = .8) +
+          geom_sf(data = small_streets$osm_lines, inherit.aes = FALSE, color = "grey", size = .3, alpha = .8) +
+          coord_sf(xlim = c(min(bb[1,]), max(bb[1,])), ylim = c(min(bb[2,]), max(bb[2,])), expand = FALSE) +
           theme_void() +
           theme(
           axis.ticks = element_blank(),
-          plot.background = element_rect(fill="white"),
+          plot.background = element_rect(fill="black"),
           plot.margin=unit(c(2.4,2.4,2.4,2.4), "cm")
           )
 
-  print("Saving Salamanca map")
+  print("Saving map")
   # save map
   ggsave(final_map, 
-        filename = "salamanca_500_white_black.png",
+        filename = paste("plots/", gsub(" ", "_", city), ".png", sep = ""),
         scale = 1, 
         width = 36, 
         height = 24, 
         units = "in",
-        dpi = 500)
+        dpi = dpi)
 
   print("All Done!!")
 }
